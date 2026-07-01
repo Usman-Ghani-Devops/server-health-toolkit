@@ -55,18 +55,6 @@ disk_usage_per_mount() {
 
     Warning=false
 
-    if [ "$1" != "--threshold" ]; then
-    result=$(df -h --output=source,pcent,target | tail -n +2 |
-    while read -r filesystem usage mount
-    do
-        usage=${usage//%/}
-
-        if [ "$usage" -gt "$THRESHOLD" ]; then
-            echo "WARNING: $filesystem is using ${usage}%"
-            echo "true"
-        fi
-    done)
-fi
     if [ "$1" = "--threshold" ] || [ "$1" = "--quiet" ]
     then 
     result=$(df -h --output=source,pcent,target | tail -n +2 |
