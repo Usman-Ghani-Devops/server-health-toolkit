@@ -87,24 +87,102 @@ top_5_proc_by_mem() {
     echo
 }
 
+generate_report() {
+    mkdir -p "$REPORT_DIR"
+
+    timestamp=$(date +"%Y-%m-%d-%H%M")
+    file_name="$REPORT_DIR/report-$timestamp.log"
+
+    highest_disk=$(df -h --output=pcent | tail -n +2 | tr -d '%' | sort -nr | head -n 1)
+
+    {
+        echo "SERVER HEALTH REPORT"
+        echo "Generated: $(date)"
+        echo
+
+        host_name
+        up_time
+        cpu_load
+        memory_usage
+        disk_usage_per_mount
+        top_5_proc_by_mem
+
+        echo "Highest Disk Usage: ${highest_disk}%"
+
+    } > "$file_name"
+
+    echo "Report Generated"
+}
+
+summary(){
+    count="$2"
+
+    if [ ! -d "$REPORT_DIR" ]
+    then
+        echo "Report directory  not exsists"
+        exit 1
+    fi
+
+    files=$(ls -t "$REPORT_DIR"/*.log 2>/dev/null | head -n "$count")
+
+    if [ -z "$files" ]
+    then
+        echo "No reports found."
+        exit 1
+    fi
+
+    prev=""
+    trend="No change"
+
+    while read -r file 
+    do
+        usage=$(grep "Highest Disk Usage:" "$file" | awk '{print $4}' | tr -d '%')
+        
+        echo "$file and usage is $usage" 
+
+        if [ -n "$prev" ]
+        then
+            if [ "$usage" -gt "$prev" ]
+            then
+                trend="Increasing"
+            elif [ "$usage" -lt "$prev" ]
+            then
+                trend="Decreasing"
+            fi
+        fi
+
+        prev=$usage
+
+    done <<< "$files"
+
+
+    echo
+    echo "Disk usage trend: $trend"
+    
+    
+}
+
+cleanup_report() {
+
+    find "$REPORT_DIR" -type f -name "*.log" -mtime +"$REPORT_RETENTION_DAYS" -delete
+
+    echo "Deleted reports older than $REPORT_RETENTION_DAYS"
+}
+
 main() {
     echo " Server Health Toolkit "
     echo
 
-    host_name
-    up_time
-    cpu_load
-    memory_usage
-    disk_usage_per_mount
-    top_5_proc_by_mem
+    generate_report
 
 }
 
 if [ "$1" = "--threshold" ]
 then 
-    if [ -z "$2" ]; then
-    echo "Second argument is not provided"
-    exit 1
+    if [ -z "$2" ]
+    then
+        echo "Second argument is not provided"
+        exit 1
     fi
     THRESHOLD=$2
     disk_usage_per_mount "$@"
@@ -112,6 +190,17 @@ elif [ "$1" = "--quiet" ]
 then   
     QUIET=true
     disk_usage_per_mount "$@"
+elif [ "$1" = "--summary" ]
+then
+    if [ -z "$2" ]
+    then 
+        echo "Second Argument is not provided"
+        exit 1
+    fi
+    summary "$@"
+elif [ "$1" = "--cleanup" ]
+then
+    cleanup_report
 else
     main
 fi
