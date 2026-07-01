@@ -1,0 +1,5 @@
+*.log
+reports/
+alerts.log
+notification.txt
+
