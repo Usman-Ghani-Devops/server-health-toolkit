@@ -1,11 +1,21 @@
 #!/bin/bash
 
 CONFIG_FILE="config.conf"
+mkdir -p logs alerts
+
+ALERT_FILE="alerts/alerts.log"
 
 if [ -f "$CONFIG_FILE" ] 
 then
     source "$CONFIG_FILE"
 fi
+
+send_alert() {
+    message="$1"
+
+    echo "$(date) $message" >> "$ALERT_FILE"
+}
+
 
 check_command(){
     if ! command -v "$1" > /dev/null 2>&1
@@ -64,7 +74,9 @@ disk_usage_per_mount() {
 
         if [ "$usage" -gt "$THRESHOLD" ]
         then
-            echo "WARNING: $filesystem is using ${usage}% (threshold: ${THRESHOLD}%) mounted on $mount"
+            warning="WARNING: $filesystem is using ${usage}% (threshold: ${THRESHOLD}%) mounted on $mount"
+            send_alert "$warning"
+            echo "$warning" 
             echo "true"
         fi
     done)
@@ -162,18 +174,36 @@ summary(){
     
 }
 
-cleanup_report() {
+cleanup_report() {  
 
     find "$REPORT_DIR" -type f -name "*.log" -mtime +"$REPORT_RETENTION_DAYS" -delete
 
     echo "Deleted reports older than $REPORT_RETENTION_DAYS"
 }
 
+
+check_failed_logins() {
+
+    check_command grep
+
+    failed_attempts=$(grep "Failed password" /var/log/auth.log)
+
+    if [ -n "$failed_attempts" ]
+    then
+        echo "$failed_attempts" >> logs/auth_failures.log
+        send_alert "Failed login attempts detected. See logs/auth_failures.log for details."
+    else
+        echo "No failed login attempts found."
+    fi
+}
+
 main() {
-    echo " Server Health Toolkit "
+    echo "Cron ran at $(date)"
+    echo "Server Health Toolkit"
     echo
 
     generate_report
+    check_failed_logins
 
 }
 

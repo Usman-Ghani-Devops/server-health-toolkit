@@ -1,5 +1,4 @@
-*.log
 reports/
-alerts.log
-notification.txt
+alerts/
+logs/
 
