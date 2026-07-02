@@ -1,12 +1,17 @@
 #!/bin/bash
 
 CONFIG_FILE="config.conf"
-mkdir -p logs alerts
 
 ALERT_FILE="alerts/alerts.log"
+REMOTE_REPORT_DIR="reports/remote"
+mkdir -p logs alerts "$REMOTE_REPORT_DIR"
+
+
+
 
 if [ -f "$CONFIG_FILE" ] 
 then
+    # shellcheck disable=SC1090
     source "$CONFIG_FILE"
 fi
 
@@ -19,7 +24,7 @@ send_alert() {
 
 check_command(){
     if ! command -v "$1" > /dev/null 2>&1
-    then
+then
         echo "$1 command not Found"
         exit 1
     fi
@@ -135,7 +140,7 @@ summary(){
         exit 1
     fi
 
-    files=$(ls -t "$REPORT_DIR"/*.log 2>/dev/null | head -n "$count")
+    files=$(find "$REPORT_DIR" -type f -name "*.log" | sort -r | head -n "$count")
 
     if [ -z "$files" ]
     then
@@ -197,6 +202,54 @@ check_failed_logins() {
     fi
 }
 
+ssh_login() {
+
+    check_command ssh
+    check_command scp
+
+    host="$2"
+
+
+    echo "Copying script to $host..."
+
+    if ! scp health.sh config.conf "$host:/tmp/"
+    then
+        echo "Failed to copy to $host"
+        exit 1
+    fi
+
+    echo "Copied successfully."
+
+    echo "Running health check on $host..."
+
+    if ! ssh "$host" "cd /tmp && chmod +x health.sh && bash health.sh"
+then
+    echo "Failed to run script on $host"
+    exit 1
+fi
+
+    echo "Health check completed successfully."
+
+    echo "Copying report back..."
+
+    echo "Copying report back..."
+
+    ssh "$host" "ls -t /tmp/reports/*.log | head -n 1" > latest_report.txt
+
+    latest_report=$(cat latest_report.txt)
+
+    rm "latest_report.txt"
+    if [ -z "$latest_report" ]
+    then
+        echo "No report found"
+        exit 1
+    fi
+
+    scp "$host:$latest_report" "$REMOTE_REPORT_DIR/"
+
+    echo "Report copied successfully."
+}
+
 main() {
     echo "Cron ran at $(date)"
     echo "Server Health Toolkit"
@@ -231,6 +284,14 @@ then
 elif [ "$1" = "--cleanup" ]
 then
     cleanup_report
+elif [ "$1" = "--remote" ]
+then
+    if [ -z "$2" ]
+    then 
+        echo "Username and ip is not provided"
+        exit 1
+    fi
+    ssh_login "$@"
 else
     main
 fi
