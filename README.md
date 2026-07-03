@@ -1,4 +1,4 @@
-# Server Health Toolkit
+  # Server Health Toolkit
 
 ## Overview
 
@@ -48,9 +48,10 @@ THRESHOLD=80
 QUIET=false
 REPORT_DIR=reports
 REPORT_RETENTION_DAYS=30
+EMAIL=usman328ghani@gmail.com
 ```
 
-The script automatically loads these settings if the configuration file exists.
+The script automatically loads these settings.
 
 ---
 
@@ -161,6 +162,142 @@ Example:
 ```
 
 ---
+
+# Email Notification Setup
+
+The Server Health Toolkit supports sending email notifications when the configured disk usage threshold is exceeded. Email delivery is handled using **msmtp**, a lightweight SMTP client.
+
+---
+
+## Install Required Packages
+
+Update the package list and install the required packages:
+
+```bash
+sudo apt update
+sudo apt install msmtp msmtp-mta
+```
+
+Verify the installation:
+
+```bash
+msmtp --version
+```
+
+---
+
+## Configure SMTP
+
+Create the msmtp configuration file:
+
+```bash
+nano ~/.msmtprc
+```
+
+Add the following configuration:
+
+```ini
+defaults
+auth on
+tls on
+tls_starttls on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+account gmail
+host smtp.gmail.com
+port 587
+
+from your_email@gmail.com
+user your_email@gmail.com
+password YOUR_APP_PASSWORD
+
+account default : gmail
+```
+
+Replace:
+
+* `your_email@gmail.com` with your Gmail address.
+* `YOUR_APP_PASSWORD` with your Google App Password.
+
+Save the file and restrict its permissions:
+
+```bash
+chmod 600 ~/.msmtprc
+```
+
+---
+
+## Configure the Toolkit
+
+Open the project configuration file:
+
+```bash
+nano config.conf
+```
+
+Example:
+
+```bash
+REPORT_DIR="reports"
+THRESHOLD=80
+REPORT_RETENTION_DAYS=7
+EMAIL="your_email@gmail.com"
+```
+
+Replace `your_email@gmail.com` with the email address that should receive alert notifications.
+
+---
+
+## Google App Password
+
+Google does not allow SMTP authentication using your normal account password.
+
+To generate an App Password:
+
+1. Open **Google Account**.
+2. Navigate to **Security**.
+3. Enable **2-Step Verification**.
+4. Open **App Passwords**.
+5. Generate a new App Password.
+6. Copy the generated password and use it in the `password` field of `~/.msmtprc`.
+
+---
+
+## Test Email Configuration
+
+Send a test email to verify the SMTP configuration:
+
+```bash
+echo -e "Subject: Test Email\n\nThis is a test email from Server Health Toolkit." | msmtp your_email@gmail.com
+```
+
+If the configuration is correct, the email should be delivered within a few seconds.
+
+---
+
+## How It Works
+
+When the toolkit generates a report, it checks the highest disk usage on the system.
+
+If the highest disk usage exceeds the configured threshold:
+
+* A report is generated.
+* The alert is logged.
+* An email notification is automatically sent to the configured recipient.
+
+---
+
+## Troubleshooting
+
+| Issue                                    | Solution                                                                                       |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `msmtp: command not found`               | Install `msmtp` and `msmtp-mta`.                                                               |
+| `Application-specific password required` | Generate and use a Google App Password instead of your normal Gmail password.                  |
+| `permissions on ~/.msmtprc are too open` | Run `chmod 600 ~/.msmtprc`.                                                                    |
+| Email not received                       | Verify the App Password, SMTP configuration, internet connection, and recipient email address. |
+
+
+
 
 # Project Structure
 
@@ -365,7 +502,6 @@ Added:
 With more time, the following improvements could be added:
 
 - Prevent duplicate failed login entries by tracking only new authentication events
-- Email notifications
 - JSON report generation
 - Multi-server monitoring
 - Parallel remote execution
