@@ -128,6 +128,18 @@ generate_report() {
 
     } > "$file_name"
 
+    if [ "$highest_disk" -gt "$THRESHOLD" ]
+    then
+        if check_command msmtp
+        then
+            echo -e "Subject: Server Alert\n\nDisk usage exceeded threshold \n Usage is ${highest_disk}%." | msmtp "$EMAIL"
+            echo "Disk Usage Exceeded Email send to your email"
+        else
+            echo "Command not found for sending email"
+        fi
+
+    fi 
+
     echo "Report Generated"
 }
 
