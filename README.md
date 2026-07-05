@@ -1,408 +1,190 @@
-  # Server Health Toolkit
+# Server Health Toolkit
 
 ## Overview
 
-Server Health Toolkit is a Bash-based system monitoring project developed to practice Linux administration, Bash scripting, Git workflows, and DevOps fundamentals.
+Server Health Toolkit is a Linux system monitoring project developed to strengthen practical skills in Linux administration, Bash scripting, Python scripting, Git workflows, and DevOps fundamentals.
 
-The toolkit collects important system information, generates timestamped reports, monitors disk usage, detects failed login attempts, supports scheduled execution, logs alerts, and can execute health checks on remote Linux systems over SSH.
+The toolkit collects essential system information, generates timestamped health reports, monitors disk usage, detects failed login attempts, supports automated execution using Cron, logs alerts, and provides tools for monitoring Linux systems.
 
-The project was built incrementally, with one Git branch and pull request per development stage.
+This repository contains **two implementations** of the same project:
 
----
+- **Bash Implementation** (Stages 0–5)
+- **Python Implementation** (Stages 0–4)
 
-# Features
-
-## System Information
-
-- Display hostname
-- Display system uptime
-- Display CPU load averages
-- Display memory usage
-- Display disk usage per mounted filesystem
-- Display the top 5 memory-consuming processes
+Both implementations share the same core functionality while demonstrating equivalent solutions using different programming languages.
 
 ---
 
-## Disk Monitoring
-
-- Configurable disk usage threshold
-- Warn when any filesystem exceeds the configured threshold
-- Quiet mode to display only warnings
-
-Example:
-
-```bash
-./health.sh --threshold 80
-```
-
----
-
-## Configuration File
-
-Default settings are stored in `config.conf`.
-
-Example:
-
-```text
-THRESHOLD=80
-QUIET=false
-REPORT_DIR=reports
-REPORT_RETENTION_DAYS=30
-EMAIL=usman328ghani@gmail.com
-```
-
-The script automatically loads these settings.
-
----
-
-## Error Handling
-
-The script verifies that required Linux commands are installed before executing them.
-
-If a required command is missing, execution stops with an appropriate error message and a non-zero exit status.
-
----
-
-## Report Generation
-
-Each execution creates a timestamped report.
-
-Example:
-
-```text
-reports/report-2026-07-02-1430.log
-```
-
-Each report contains:
-
-- Hostname
-- Uptime
-- CPU Load
-- Memory Usage
-- Disk Usage
-- Top Processes
-- Highest Disk Usage
-
----
-
-## Report Summary
-
-Generate a summary from previous reports.
-
-Example:
-
-```bash
-./health.sh --summary 5
-```
-
-The script reads the latest reports and determines whether disk usage is:
-
-- Increasing
-- Decreasing
-- Stable
-
----
-
-## Report Cleanup
-
-Delete reports older than the configured retention period.
-
-Example:
-
-```bash
-./health.sh --cleanup
-```
-
----
-
-## Alert System
-
-Whenever disk usage exceeds the configured threshold:
-
-- A warning is displayed
-- An alert is written to:
-
-```text
-alerts/alerts.log
-```
-
----
-
-## Failed Login Detection
-
-The toolkit scans the authentication log for failed SSH login attempts.
-
-Detected failures are:
-
-- Saved to
-
-```text
-logs/auth_failures.log
-```
-
-- Logged as alerts
-
----
-
-## Remote Monitoring (Bonus)
-
-The toolkit supports monitoring remote Linux systems using SSH.
-
-Features:
-
-- Copy the monitoring script to the remote machine
-- Execute the health check remotely
-- Retrieve the generated report using SCP
-- Handle connection and transfer failures gracefully
-
-Example:
-
-```bash
-./health.sh --remote user@192.168.1.100
-```
-
----
-
-# Email Notification Setup
-
-The Server Health Toolkit supports sending email notifications when the configured disk usage threshold is exceeded. Email delivery is handled using **msmtp**, a lightweight SMTP client.
-
----
-
-## Install Required Packages
-
-Update the package list and install the required packages:
-
-```bash
-sudo apt update
-sudo apt install msmtp msmtp-mta
-```
-
-Verify the installation:
-
-```bash
-msmtp --version
-```
-
----
-
-## Configure SMTP
-
-Create the msmtp configuration file:
-
-```bash
-nano ~/.msmtprc
-```
-
-Add the following configuration:
-
-```ini
-defaults
-auth on
-tls on
-tls_starttls on
-tls_trust_file /etc/ssl/certs/ca-certificates.crt
-
-account gmail
-host smtp.gmail.com
-port 587
-
-from your_email@gmail.com
-user your_email@gmail.com
-password YOUR_APP_PASSWORD
-
-account default : gmail
-```
-
-Replace:
-
-* `your_email@gmail.com` with your Gmail address.
-* `YOUR_APP_PASSWORD` with your Google App Password.
-
-Save the file and restrict its permissions:
-
-```bash
-chmod 600 ~/.msmtprc
-```
-
----
-
-## Configure the Toolkit
-
-Open the project configuration file:
-
-```bash
-nano config.conf
-```
-
-Example:
-
-```bash
-REPORT_DIR="reports"
-THRESHOLD=80
-REPORT_RETENTION_DAYS=7
-EMAIL="your_email@gmail.com"
-```
-
-Replace `your_email@gmail.com` with the email address that should receive alert notifications.
-
----
-
-## Google App Password
-
-Google does not allow SMTP authentication using your normal account password.
-
-To generate an App Password:
-
-1. Open **Google Account**.
-2. Navigate to **Security**.
-3. Enable **2-Step Verification**.
-4. Open **App Passwords**.
-5. Generate a new App Password.
-6. Copy the generated password and use it in the `password` field of `~/.msmtprc`.
-
----
-
-## Test Email Configuration
-
-Send a test email to verify the SMTP configuration:
-
-```bash
-echo -e "Subject: Test Email\n\nThis is a test email from Server Health Toolkit." | msmtp your_email@gmail.com
-```
-
-If the configuration is correct, the email should be delivered within a few seconds.
-
----
-
-## How It Works
-
-When the toolkit generates a report, it checks the highest disk usage on the system.
-
-If the highest disk usage exceeds the configured threshold:
-
-* A report is generated.
-* The alert is logged.
-* An email notification is automatically sent to the configured recipient.
-
----
-
-## Troubleshooting
-
-| Issue                                    | Solution                                                                                       |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `msmtp: command not found`               | Install `msmtp` and `msmtp-mta`.                                                               |
-| `Application-specific password required` | Generate and use a Google App Password instead of your normal Gmail password.                  |
-| `permissions on ~/.msmtprc are too open` | Run `chmod 600 ~/.msmtprc`.                                                                    |
-| Email not received                       | Verify the App Password, SMTP configuration, internet connection, and recipient email address. |
-
-
-
-
-# Project Structure
+# Repository Structure
 
 ```text
 server-health-toolkit/
+│
 ├── README.md
-├── health.sh
-├── config.conf
-├── .gitignore
-├── reports/
-│   └── remote/
-├── alerts/
-├── logs/
+│
+├── bash/
+│   ├── README.md
+│   ├── health.sh
+│   ├── config.conf
+│   ├── reports/
+│   │   ├── report-YYYY-MM-DD-HHMM.log
+│   │   └── remote/
+│   │       └── report-YYYY-MM-DD-HHMM.log
+│   ├── alerts/
+│   │   └── alerts.log
+│   └── logs/
+│       ├── auth_failures.log
+│       └── cron.log
+│
+├── python/
+│   ├── README.md
+│   ├── health.py
+│   ├── config.json
+│   ├── reports/
+│   │   └── report-YYYY-MM-DD-HHMM.log
+│   ├── alerts/
+│   │   └── alert.log
+│   └── logs/
+│       └── auth_failures.log
+│
+└── .gitignore
 ```
 
 ---
 
-# Requirements
+# Implementations
 
-- Linux (Ubuntu recommended)
-- Bash
+## Bash Implementation
+
+Location
+
+```text
+bash/
+```
+
+The Bash implementation demonstrates Linux automation using standard shell utilities and common administration tools.
+
+Implemented Features
+
+- Repository setup
+- Modular Bash scripting
+- Configuration file support
+- System information collection
+- Threshold monitoring
+- Quiet mode
+- Timestamped report generation
+- Report summaries
+- Automatic cleanup
+- Alert logging
+- Failed SSH login detection
+- Email notifications using msmtp
+- Cron scheduling
+- Remote monitoring using SSH and SCP
+
+Documentation
+
+```text
+bash/README.md
+```
+
+Status
+
+```text
+Completed (Stages 0–5)
+```
+
+---
+
+## Python Implementation
+
+Location
+
+```text
+python/
+```
+
+The Python implementation demonstrates the same monitoring concepts using Python standard libraries while following a modular programming approach.
+
+Implemented Features
+
+- Repository setup
+- Modular Python functions
+- JSON configuration
+- System information collection
+- Threshold monitoring
+- Quiet mode
+- Timestamped report generation
+- Report summaries
+- Automatic cleanup
+- Alert logging
+- Failed SSH login detection
+
+Documentation
+
+```text
+python/README.md
+```
+
+Status
+
+```text
+Completed (Stages 0–4)
+```
+
+---
+
+# Feature Comparison
+
+| Feature | Bash | Python |
+|----------|:----:|:------:|
+| Repository Setup | ✅ | ✅ |
+| Configuration File | ✅ | ✅ |
+| Hostname | ✅ | ✅ |
+| Uptime | ✅ | ✅ |
+| CPU Load | ✅ | ✅ |
+| Memory Usage | ✅ | ✅ |
+| Disk Usage | ✅ | ✅ |
+| Top 5 Processes | ✅ | ✅ |
+| Threshold Monitoring | ✅ | ✅ |
+| Quiet Mode | ✅ | ✅ |
+| Timestamped Reports | ✅ | ✅ |
+| Report Summary | ✅ | ✅ |
+| Automatic Cleanup | ✅ | ✅ |
+| Alert Logging | ✅ | ✅ |
+| Failed Login Detection | ✅ | ✅ |
+| Cron Scheduling | ✅ | Planned |
+| Email Notifications | ✅ | Planned |
+| Remote Monitoring | ✅ | Planned |
+
+---
+
+# Technologies Used
+
+## Common
+
+- Linux
 - Git
-- OpenSSH Client
-- OpenSSH Server (for remote monitoring)
+- GitHub
 
----
+## Bash Implementation
 
-# Installation
+- Bash
+- Core Linux Utilities
+- SSH
+- SCP
+- Cron
+- ShellCheck
+- msmtp
 
-Clone the repository:
+## Python Implementation
 
-```bash
-git clone <repository-url>
-cd server-health-toolkit
-```
-
-Make the script executable:
-
-```bash
-chmod +x health.sh
-```
-
----
-
-# Usage
-
-Run a normal health check:
-
-```bash
-./health.sh
-```
-
-Check disk usage with a custom threshold:
-
-```bash
-./health.sh --threshold 90
-```
-
-Show only warnings:
-
-```bash
-./health.sh --quiet
-```
-
-Generate a report summary:
-
-```bash
-./health.sh --summary 5
-```
-
-Delete old reports:
-
-```bash
-./health.sh --cleanup
-```
-
-Run a remote health check:
-
-```bash
-./health.sh --remote user@192.168.1.100
-```
-
----
-
-## Cron Scheduling
-
-The toolkit can be executed automatically using `cron`.
-
-### Example
-
-The following cron job runs the health check every **5 minutes**:
-
-```cron
-*/5 * * * * cd /home/usman-ghani/server-health-toolkit && /bin/bash health.sh >> logs/cron.log 2>&1
-```
-
-### Explanation
-
-- `*/5 * * * *` — Run every 5 minutes.
-- `cd /home/usman-ghani/server-health-toolkit` — Change to the project directory.
-- `/bin/bash health.sh` — Execute the health monitoring script.
-- `>> logs/cron.log` — Append the script output to `logs/cron.log`.
-- `2>&1` — Redirect error messages (`stderr`) to the same log file.
-
-This allows the toolkit to perform automated health checks while keeping a history of each scheduled execution in `logs/cron.log`.
+- Python 3
+- argparse
+- subprocess
+- json
+- shutil
+- os
+- datetime
 
 ---
 
@@ -410,18 +192,20 @@ This allows the toolkit to perform automated health checks while keeping a histo
 
 ## Stage 0
 
-- Repository setup
-- README
+Repository setup
+
+- Project initialization
 - Git workflow
 - Branching strategy
+- Documentation
 
 ---
 
 ## Stage 1
 
-Implemented basic system information collection.
+System information collection
 
-Added:
+Implemented
 
 - Hostname
 - Uptime
@@ -434,24 +218,23 @@ Added:
 
 ## Stage 2
 
-Improved robustness.
+Monitoring improvements
 
-Added:
+Implemented
 
 - Configurable threshold
 - Quiet mode
-- Configuration file
+- Configuration files
 - Error handling
 - Modular functions
-- ShellCheck compliance
 
 ---
 
 ## Stage 3
 
-Implemented reporting.
+Reporting
 
-Added:
+Implemented
 
 - Timestamped reports
 - Report history
@@ -462,21 +245,20 @@ Added:
 
 ## Stage 4
 
-Implemented monitoring and alerting.
+Monitoring and alerting
 
-Added:
+Implemented
 
 - Alert logging
 - Failed login detection
-- Cron scheduling support
 
 ---
 
-## Stage 5 (Bonus)
+## Stage 5 (Bash Only)
 
-Implemented remote monitoring.
+Remote monitoring
 
-Added:
+Implemented
 
 - SSH execution
 - SCP report retrieval
@@ -485,49 +267,86 @@ Added:
 
 ---
 
-# Technologies Used
+# Installation
 
-- Bash
-- Linux Utilities
-- Git
-- SSH
-- SCP
-- Cron
-- ShellCheck
+Clone the repository
+
+```bash
+git clone <repository-url>
+```
+
+Move into the project directory
+
+```bash
+cd server-health-toolkit
+```
 
 ---
 
-# Future Improvements
+# Getting Started
 
-With more time, the following improvements could be added:
+For the Bash implementation, see
 
-- Prevent duplicate failed login entries by tracking only new authentication events
-- JSON report generation
-- Multi-server monitoring
-- Parallel remote execution
-- Systemd service integration
-- Unit testing for Bash functions
+```text
+bash/README.md
+```
+
+For the Python implementation, see
+
+```text
+python/README.md
+```
+
+Each README contains:
+
+- Installation
+- Configuration
+- Usage
+- Examples
+- Requirements
+- Project structure
+- Feature explanations
 
 ---
 
 # Learning Objectives
 
-This project demonstrates practical experience with:
+This project demonstrates practical experience with
 
 - Linux system administration
 - Bash scripting
+- Python scripting
 - Process monitoring
 - File handling
 - Log analysis
 - Git branching workflows
+- Configuration management
 - SSH automation
 - Cron scheduling
 - Error handling
-- Modular scripting
-- ShellCheck best practices
+- Modular programming
+- Report generation
+
+---
+
+# Future Improvements
+
+Possible future enhancements include
+
+- Multi-server monitoring
+- JSON and HTML reports
+- Parallel remote execution
+- Email notifications in Python
+- Remote monitoring in Python
+- Systemd service integration
+- Unit testing
 
 ---
 
 # Author
 
-Usman Ghani
+**Usman Ghani**
+
+Software Engineering Student
+
+Linux • Bash • Python • Git • DevOps

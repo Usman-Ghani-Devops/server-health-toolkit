@@ -1,3 +1,7 @@
-reports/
-alerts/
-logs/
+bash/reports/
+bash/alerts/
+bash/logs/
+
+python/reports/
+python/alerts
+python/logs

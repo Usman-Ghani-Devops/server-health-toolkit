@@ -2,6 +2,6 @@
     "report_dir": "reports",
     "threshold": 30,
     "retention_days": 30,
-    "email": "usman328ghani@gmail.com",
+    "email": "your_email@example.com",
     "quiet": false
 }

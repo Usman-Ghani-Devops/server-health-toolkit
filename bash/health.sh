@@ -130,6 +130,7 @@ generate_report() {
 
     if [ "$highest_disk" -gt "$THRESHOLD" ]
     then
+        send_alert "Disk Usage Exceeded $THRESHOLD usage is $highest_disk"
         if check_command msmtp
         then
             echo -e "Subject: Server Alert\n\nDisk usage exceeded threshold \n Usage is ${highest_disk}%." | msmtp "$EMAIL"
@@ -222,7 +223,7 @@ ssh_login() {
     host="$2"
 
 
-    echo "Copying script to $host..."
+    echo "Copying script to $host"
 
     if ! scp health.sh config.conf "$host:/tmp/"
     then
@@ -230,9 +231,9 @@ ssh_login() {
         exit 1
     fi
 
-    echo "Copied successfully."
+    echo "Copied successfully"
 
-    echo "Running health check on $host..."
+    echo "Running health check on $host"
 
     if ! ssh "$host" "cd /tmp && chmod +x health.sh && bash health.sh"
 then
@@ -240,11 +241,9 @@ then
     exit 1
 fi
 
-    echo "Health check completed successfully."
+    echo "Health check completed successfully"
 
-    echo "Copying report back..."
-
-    echo "Copying report back..."
+    echo "Copying report back"
 
     ssh "$host" "ls -t /tmp/reports/*.log | head -n 1" > latest_report.txt
 
@@ -259,7 +258,7 @@ fi
 
     scp "$host:$latest_report" "$REMOTE_REPORT_DIR/"
 
-    echo "Report copied successfully."
+    echo "Report copied successfully"
 }
 
 main() {
