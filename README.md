@@ -13,7 +13,72 @@ This repository contains **two implementations** of the same project:
 
 Both implementations share the same core functionality while demonstrating equivalent solutions using different programming languages.
 
----
+### Supported Linux Distributions (Bash Implementation)
+
+| Distribution | Status | Authentication Log |
+|--------------|--------|--------------------|
+| Ubuntu | ✅ Supported | `/var/log/auth.log` |
+| Debian | ✅ Supported | `/var/log/auth.log` |
+| CentOS | ✅ Supported | `/var/log/secure` |
+| Red Hat Enterprise Linux (RHEL) | ✅ Supported | `/var/log/secure` |
+| Rocky Linux | ✅ Supported | `/var/log/secure` |
+| AlmaLinux | ✅ Supported | `/var/log/secure` |
+| Fedora | ✅ Supported | `/var/log/secure` |
+
+### Automatic OS Detection
+
+At startup, the toolkit reads the operating system information from:
+
+```text
+/etc/os-release
+```
+
+Based on the detected Linux distribution, it automatically:
+
+- Selects the correct authentication log file.
+- Uses the appropriate log location for failed SSH login monitoring.
+- Prevents execution on unsupported Linux distributions by displaying a clear error message.
+
+This approach eliminates the need to modify the script when deploying it on different Linux distributions, making the toolkit portable across Debian-based and Red Hat-based systems.
+
+### Supported Linux Distributions (Python Implementation)
+
+The Python implementation is currently developed and tested for **Ubuntu Linux**.
+
+### Supported Distribution
+
+| Distribution | Status |
+|--------------|--------|
+| Ubuntu | ✅ Fully Supported |
+| Debian | ⚠️ Not Tested |
+| CentOS | ❌ Not Supported |
+| Red Hat Enterprise Linux (RHEL) | ❌ Not Supported |
+| Rocky Linux | ❌ Not Supported |
+| AlmaLinux | ❌ Not Supported |
+| Fedora | ❌ Not Supported |
+
+### Current Environment
+
+The Python implementation assumes Ubuntu-specific system behavior, including:
+
+- Authentication log location:
+
+```text
+/var/log/auth.log
+```
+
+- Standard Linux utilities available on Ubuntu.
+- Ubuntu file system layout.
+
+### Future Improvements
+
+Future releases will add automatic Linux distribution detection using:
+
+```text
+/etc/os-release
+```
+
+to provide support for additional Linux distributions, similar to the Bash implementation.
 
 # Repository Structure
 
