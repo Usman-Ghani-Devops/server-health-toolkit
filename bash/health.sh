@@ -2,18 +2,45 @@
 
 CONFIG_FILE="config.conf"
 
-ALERT_FILE="alerts/alerts.log"
-REMOTE_REPORT_DIR="reports/remote"
-mkdir -p logs alerts "$REMOTE_REPORT_DIR"
-
-
-
-
 if [ -f "$CONFIG_FILE" ] 
 then
     # shellcheck disable=SC1090
     source "$CONFIG_FILE"
 fi
+
+mkdir -p "$(dirname "$AUTH_LOGS")" "$(dirname "$ALERT_FILE")" "$REMOTE_REPORT_DIR"
+
+
+detect_os() {
+    if [ -f /etc/os-release ];
+    then 
+        # shellcheck disable=SC1091
+        source /etc/os-release 
+
+        Distro=$ID
+    else
+        echo "Unsupported Linux distribution $Distro"
+        exit 1
+    fi
+}
+
+get_auth_log() {
+    if [[ "$Distro" == "ubuntu"  || "$Distro" == "debian" ]]
+    then
+        auth_log="/var/log/auth.log"
+    elif [[ "$Distro" == "centos" || "$Distro" == "rhel" || "$Distro" == "rocky" || "$Distro" == "almalinux" ||"$Distro" == "fedora" ]]
+    then 
+        auth_log="/var/log/secure"
+    else
+        echo "Unsupported Linux distribution $Distro"
+        exit 1
+    fi
+}
+
+
+detect_os
+get_auth_log
+
 
 send_alert() {
     message="$1"
@@ -153,7 +180,7 @@ summary(){
         exit 1
     fi
 
-    files=$(find "$REPORT_DIR" -type f -name "*.log" | sort -r | head -n "$count")
+    files=$(find "$REPORT_DIR" -type f -name "*.log" | sort -r  | head -n "$count")
 
     if [ -z "$files" ]
     then
@@ -174,10 +201,10 @@ summary(){
         then
             if [ "$usage" -gt "$prev" ]
             then
-                trend="Increasing"
+                trend="Drecreasing"
             elif [ "$usage" -lt "$prev" ]
             then
-                trend="Decreasing"
+                trend="Increasing"
             fi
         fi
 
@@ -204,12 +231,12 @@ check_failed_logins() {
 
     check_command grep
 
-    failed_attempts=$(grep "Failed password" /var/log/auth.log)
+    failed_attempts=$(grep "Failed password" "$auth_log")
 
     if [ -n "$failed_attempts" ]
     then
-        echo "$failed_attempts" >> logs/auth_failures.log
-        send_alert "Failed login attempts detected. See logs/auth_failures.log for details."
+        echo "$failed_attempts" >>  "$AUTH_LOGS"
+        send_alert "Failed login attempts detected. See {$AUTH_LOGS} for details."
     else
         echo "No failed login attempts found."
     fi
@@ -271,38 +298,69 @@ main() {
 
 }
 
+
 if [ "$1" = "--threshold" ]
 then 
     if [ -z "$2" ]
     then
         echo "Second argument is not provided"
         exit 1
+    elif [ -n "$3" ]
+    then
+        echo "Invalid Argument"
+        exit 1
     fi
     THRESHOLD=$2
+
     disk_usage_per_mount "$@"
 elif [ "$1" = "--quiet" ]
-then   
-    QUIET=true
-    disk_usage_per_mount "$@"
+then  
+    if [ -z "$2" ]
+    then 
+        QUIET=true
+        disk_usage_per_mount "$@"
+    else
+        echo "Invalid Arguments"
+        exit 1
+    fi
+
 elif [ "$1" = "--summary" ]
 then
     if [ -z "$2" ]
     then 
         echo "Second Argument is not provided"
         exit 1
+    elif [ -n "$3" ]
+    then 
+        echo "Invalid Arguments"
+        exit 1 
     fi
     summary "$@"
 elif [ "$1" = "--cleanup" ]
 then
-    cleanup_report
+    if [ -z "$2" ]
+    then
+        cleanup_report
+    else
+        echo "Invalid Arguments"
+        exit 1
+    fi
+
 elif [ "$1" = "--remote" ]
 then
     if [ -z "$2" ]
     then 
         echo "Username and ip is not provided"
         exit 1
+    elif [ -n "$3" ]
+    then        
+        echo "Invalid Argument"
+        exit 1
     fi
     ssh_login "$@"
-else
+elif [ -z "$1" ]
+then
     main
+else
+    echo "Invalid Arguments"
 fi
