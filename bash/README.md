@@ -10,6 +10,38 @@ The project was developed incrementally using feature branches and pull requests
 
 ---
 
+## Cross-Distribution Linux Support
+
+The toolkit is designed to work across multiple Linux distributions by automatically detecting the operating system at runtime and selecting the appropriate system resources. No manual changes are required when moving the toolkit between supported distributions.
+
+### Supported Distributions
+
+| Distribution | Status | Authentication Log |
+|--------------|--------|--------------------|
+| Ubuntu | ✅ Supported | `/var/log/auth.log` |
+| Debian | ✅ Supported | `/var/log/auth.log` |
+| CentOS | ✅ Supported | `/var/log/secure` |
+| Red Hat Enterprise Linux (RHEL) | ✅ Supported | `/var/log/secure` |
+| Rocky Linux | ✅ Supported | `/var/log/secure` |
+| AlmaLinux | ✅ Supported | `/var/log/secure` |
+| Fedora | ✅ Supported | `/var/log/secure` |
+
+### Automatic OS Detection
+
+At startup, the toolkit reads the operating system information from:
+
+```text
+/etc/os-release
+```
+
+Based on the detected Linux distribution, it automatically:
+
+- Selects the correct authentication log file.
+- Uses the appropriate log location for failed SSH login monitoring.
+- Prevents execution on unsupported Linux distributions by displaying a clear error message.
+
+This approach eliminates the need to modify the script when deploying it on different Linux distributions, making the toolkit portable across Debian-based and Red Hat-based systems.
+
 # Features
 
 ## System Information
@@ -161,6 +193,7 @@ bash/
 ```
 
 ---
+
 
 # Requirements
 
